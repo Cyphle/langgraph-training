@@ -1,5 +1,8 @@
 import pprint
 from dotenv import load_dotenv
+
+from AgentThree.graph.chains import hallucination_grader
+from AgentThree.graph.chains.hallucination_grader import GradeHallucinations
 load_dotenv()
 
 from AgentThree.graph.chains.generation import generation_chain
@@ -36,4 +39,19 @@ def test_generation_chain() -> None:
 
     pprint(generation)
 
-    
+def test_hallucination_grader() -> None:
+    question = "agent memory"
+    docs = retriever.invoke(question)
+    generation = generation_chain.invoke({"question": question, "context": docs})
+
+    res: GradeHallucinations = hallucination_grader.invoke({"documents": docs, "generation": generation})
+
+    assert res.binary_score
+
+def test_hallucination_grader_answer_no() -> None:
+    question = "agent memory"
+    docs = retriever.invoke(question)
+
+    res: GradeHallucinations = hallucination_grader.invoke({"documents": docs, "generation": "In order to make pizza we need to first start with the dough"})
+
+    assert not res.binary_score
